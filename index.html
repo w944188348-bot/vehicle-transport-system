@@ -1,0 +1,1121 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>车辆运输财务管理系统</title>
+    <link rel="stylesheet" href="styles.css?v=20260709-compact-rows" />
+  </head>
+  <body data-theme="day">
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="brand-hero" aria-label="车辆运输财务管理系统">
+          <span class="brand-hero-logo" aria-hidden="true">砼</span>
+          <div class="brand-hero-text" aria-hidden="true">
+            <span>车辆运输财务管理</span><em>系统</em>
+          </div>
+        </div>
+      </header>
+
+      <div class="nav-shell">
+        <nav class="tabs" aria-label="系统模块">
+          <button class="tab active" data-tab="dashboard" type="button">总览</button>
+          <button class="tab" data-tab="jobs" type="button">每日运输</button>
+          <button class="tab" data-tab="vehicles" type="button">车辆管理</button>
+          <button class="tab" data-tab="customers" type="button">客户管理</button>
+          <button class="tab" data-tab="expenses" type="button">支出费用管理</button>
+          <button class="tab" data-tab="salaries" type="button">人员及工资管理</button>
+          <button class="tab" data-tab="notifications" type="button"><span id="notificationNavLabel">通知</span><span class="review-badge" id="notificationNavBadge" hidden>0</span></button>
+          <button class="tab" data-tab="submittedDrafts" type="button"><span id="submittedDraftsNavLabel">提交草稿</span><span class="review-badge" id="submittedDraftsNavBadge" hidden>0</span></button>
+          <button class="tab admin-only" data-tab="reviews" type="button" hidden>审核管理<span class="review-badge" id="reviewNavBadge" hidden>0</span></button>
+        </nav>
+        <div class="settings-control nav-settings">
+          <button class="nav-icon-button theme-toggle" id="themeToggleBtn" type="button" aria-label="切换夜晚模式" aria-pressed="false" title="切换夜晚模式">
+            <span class="theme-toggle-icon" aria-hidden="true"></span>
+          </button>
+          <button class="nav-icon-button settings-tab" id="systemSettingsBtn" type="button" aria-label="系统设置" aria-expanded="false" aria-controls="systemSettingsMenu" title="系统设置">
+            <span class="settings-tab-icon" aria-hidden="true"></span>
+          </button>
+          <div class="settings-menu" id="systemSettingsMenu" hidden>
+            <div class="settings-user-panel" id="settingsUserPanel" aria-live="polite">
+              <div class="user-avatar" id="settingsUserAvatar" aria-hidden="true">?</div>
+              <div class="user-meta">
+                <strong id="settingsUserName">正在读取用户</strong>
+                <span id="settingsUserDetail">请稍候</span>
+              </div>
+            </div>
+            <div class="settings-menu-section" aria-label="系统工具">
+              <button class="settings-menu-item" data-tab="data" type="button">
+                <span class="settings-menu-mark">数</span>
+                <span>
+                  <strong>数据</strong>
+                  <small>备份、导入、月报摘要</small>
+                </span>
+              </button>
+              <a class="settings-menu-item" id="settingsUserManageLink" href="/users.html">
+                <span class="settings-menu-mark">用</span>
+                <span>
+                  <strong>用户管理</strong>
+                  <small>账号、角色、停用启用</small>
+                </span>
+              </a>
+              <button class="settings-menu-item" data-action="switch-user" type="button">
+                <span class="settings-menu-mark">切</span>
+                <span>
+                  <strong>切换用户</strong>
+                  <small>回到登录页面</small>
+                </span>
+              </button>
+              <button class="settings-menu-item danger" data-action="logout" type="button">
+                <span class="settings-menu-mark">退</span>
+                <span>
+                  <strong>退出登录</strong>
+                  <small>清除当前登录状态</small>
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <main>
+        <section class="page active" id="dashboard">
+          <div class="stats-grid" id="statsGrid"></div>
+
+          <div class="dashboard-grid dashboard-main-grid">
+            <section class="panel trend-panel" aria-labelledby="dailyTrendTitle">
+              <div class="panel-head">
+                <div>
+                  <h3 id="dailyTrendTitle">每日经营</h3>
+                </div>
+                <div class="trend-legend" id="dailyTrendLegend" aria-label="每日经营指标"></div>
+              </div>
+              <div class="trend-chart" id="dailyTrendChart" role="img" aria-label="近 7 日每日经营"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <h3>昨日动态</h3>
+                <button class="link-button" id="yesterdayJobsViewAll" data-dashboard-action="yesterday-jobs" type="button">查看全部</button>
+              </div>
+              <div id="recentJobsBody" class="activity-list"></div>
+            </section>
+          </div>
+
+          <div class="dashboard-grid dashboard-bottom-grid">
+            <section class="panel">
+              <div class="panel-head">
+                <h3>客户欠账排行</h3>
+                <div class="panel-actions">
+                  <button class="link-button" data-dashboard-action="customer-payment" type="button">去收款</button>
+                  <button class="link-button" data-dashboard-action="customer-debts" type="button">查看全部</button>
+                </div>
+              </div>
+              <div id="debtRanking" class="ranking-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <h3>车辆到期提醒</h3>
+              </div>
+              <div id="expiryAlerts" class="alert-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="page" id="jobs">
+          <div class="module-panel" data-module="jobs" data-mode="list" data-module-panel="jobs-list">
+            <div class="table-panel panel">
+              <div class="panel-head">
+                <h3>正式运输台账</h3>
+                <input class="table-search" id="jobSearch" placeholder="搜索车牌、客户、工地" />
+              </div>
+              <div class="filter-bar">
+                <label>
+                  单日
+                  <input id="jobDateFilter" type="date" />
+                </label>
+                <label>
+                  开始
+                  <input id="jobStartDateFilter" type="date" />
+                </label>
+                <label>
+                  结束
+                  <input id="jobEndDateFilter" type="date" />
+                </label>
+                <label>
+                  客户
+                  <select id="jobFilterCustomer"></select>
+                </label>
+                <label>
+                  车辆
+                  <select id="jobFilterVehicle"></select>
+                </label>
+                <label>
+                  驾驶员
+                  <select id="jobFilterDriver"></select>
+                </label>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>单据编号</th>
+                      <th>日期</th>
+                      <th>车辆</th>
+                      <th>客户</th>
+                      <th>施工/工程</th>
+                      <th>数量</th>
+                      <th>应收</th>
+                      <th>已收</th>
+                      <th>欠款</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="jobsTableBody"></tbody>
+                </table>
+              </div>
+              <div class="pagination" id="jobsPagination"></div>
+            </div>
+            <div class="module-actions">
+              <button class="button primary" data-module-mode="jobs" data-mode="entry" type="button">录入每日运输</button>
+            </div>
+          </div>
+          <div class="module-panel" data-module="jobs" data-mode="entry" data-module-panel="jobs-entry" hidden>
+            <form class="form-grid panel" id="jobForm">
+              <input type="hidden" id="jobId" />
+              <input type="hidden" id="jobOriginalJobId" />
+              <div class="subsection-title">基础信息</div>
+              <label>
+                日期
+                <input id="jobDate" type="date" required />
+              </label>
+              <label>
+                车辆
+                <select id="jobVehicle" required></select>
+              </label>
+              <label>
+                客户
+                <select id="jobCustomer" required></select>
+              </label>
+              <label>
+                司机/操作员
+                <select id="jobDriver" required></select>
+              </label>
+              <label>
+                业务类型
+                <select id="jobWorkType">
+                  <option>混凝土运输</option>
+                  <option>泵送服务</option>
+                  <option>其他</option>
+                </select>
+              </label>
+              <label>
+                单据编号
+                <input id="jobDocumentNo" placeholder="如：YS-20260709-001" />
+              </label>
+              <label>
+                施工单位
+                <input id="jobSite" list="jobSiteHistory" placeholder="如：城南建设" />
+              </label>
+              <label>
+                工程名称
+                <input id="jobProject" list="jobProjectHistory" placeholder="如：C30 基础浇筑" />
+              </label>
+              <datalist id="jobSiteHistory"></datalist>
+              <datalist id="jobProjectHistory"></datalist>
+              <label>
+                趟数
+                <input id="jobTrips" type="number" min="1" step="1" value="1" />
+              </label>
+              <label>
+                实际方量
+                <input id="jobVolume" type="number" min="0" step="1" />
+              </label>
+              <label>
+                结算方量
+                <input id="jobSettlementVolume" type="number" min="0" step="1" />
+              </label>
+              <label>
+                带料方量
+                <input id="jobMaterialVolume" type="number" min="0" step="1" />
+              </label>
+              <label>
+                超时时间
+                <input id="jobPumpHours" type="number" min="0" step="1" />
+              </label>
+              <label>
+                运输公里数
+                <input id="jobOdometer" type="number" min="0" step="1" placeholder="本次运输公里数" />
+              </label>
+              <label>
+                付款方式
+                <select id="jobPaymentMethod">
+                  <option value="">未选择</option>
+                  <option value="合同">合同</option>
+                  <option value="现金">现金</option>
+                </select>
+              </label>
+              <div class="subsection-title">数量与金额</div>
+              <label>
+                运输单价
+                <input id="jobUnitPrice" type="number" min="0" step="0.01" value="0" />
+              </label>
+              <label>
+                带料单价
+                <input id="jobMaterialUnitPrice" type="number" min="0" step="0.01" value="0" />
+              </label>
+              <label>
+                超时单价
+                <input id="jobOvertimeUnitPrice" type="number" min="0" step="0.01" value="0" />
+              </label>
+              <label>
+                应收金额
+                <input id="jobAmount" type="number" min="0" step="0.01" required />
+              </label>
+              <label>
+                当场收款
+                <input id="jobPaid" type="number" min="0" step="0.01" value="0" />
+              </label>
+              <label class="wide">
+                备注
+                <input id="jobNote" placeholder="如：月底统一结算、票据编号等" />
+              </label>
+              <div class="form-actions wide">
+                <button class="button secondary" id="calcJobAmountBtn" type="button">按单价计算</button>
+                <button class="button primary" type="submit">提交待审核</button>
+                <button class="button ghost" data-reset="jobForm" type="button">清空</button>
+                <button class="button ghost" data-module-mode="jobs" data-mode="list" type="button">运输记录</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <section class="page" id="vehicles">
+          <div class="module-panel" data-role-requires="master-data" data-module="vehicles" data-mode="entry" data-module-panel="vehicles-entry" hidden>
+          <form class="form-grid panel vehicle-entry-grid" id="vehicleForm">
+            <input type="hidden" id="vehicleId" />
+            <div class="vehicle-basic-row wide">
+              <label>
+                车牌号
+                <input id="vehiclePlate" placeholder="如：皖A12345" required />
+              </label>
+              <label>
+                类型
+                <select id="vehicleType">
+                  <option>混凝土罐车</option>
+                  <option>泵车</option>
+                </select>
+              </label>
+              <label>
+                品牌/型号
+                <input id="vehicleModel" placeholder="如：三一 12 方" />
+              </label>
+              <label>
+                默认司机
+                <input id="vehicleDriver" placeholder="如：李师傅" />
+              </label>
+              <label>
+                状态
+                <select id="vehicleStatus">
+                  <option>正常</option>
+                  <option>维修中</option>
+                  <option>停用</option>
+                </select>
+              </label>
+              <label>
+                入档日期
+                <input id="vehicleStartDate" type="date" />
+              </label>
+            </div>
+            <div class="vehicle-detail-grid wide">
+              <fieldset class="wide vehicle-section compact-inspection">
+                <legend>年审</legend>
+                <label>
+                  年审到期日
+                  <input id="vehicleInspectionExpiry" type="date" />
+                </label>
+                <div class="wide photo-grid">
+                  <label class="photo-slot">
+                    <span>照片 1</span>
+                    <input id="vehicleInspectionPhoto0" type="file" accept="image/jpeg,image/png,image/webp" data-photo-slot="0" />
+                    <button class="button ghost small" type="button" data-clear-photo="0">清空</button>
+                  </label>
+                  <label class="photo-slot">
+                    <span>照片 2</span>
+                    <input id="vehicleInspectionPhoto1" type="file" accept="image/jpeg,image/png,image/webp" data-photo-slot="1" />
+                    <button class="button ghost small" type="button" data-clear-photo="1">清空</button>
+                  </label>
+                  <label class="photo-slot">
+                    <span>照片 3</span>
+                    <input id="vehicleInspectionPhoto2" type="file" accept="image/jpeg,image/png,image/webp" data-photo-slot="2" />
+                    <button class="button ghost small" type="button" data-clear-photo="2">清空</button>
+                  </label>
+                  <label class="photo-slot">
+                    <span>照片 4</span>
+                    <input id="vehicleInspectionPhoto3" type="file" accept="image/jpeg,image/png,image/webp" data-photo-slot="3" />
+                    <button class="button ghost small" type="button" data-clear-photo="3">清空</button>
+                  </label>
+                </div>
+                <div class="wide photo-preview" id="vehicleInspectionPhotoPreview"></div>
+              </fieldset>
+              <fieldset class="wide form-section compact-insurance">
+                <legend>强制险</legend>
+                <label>
+                  保险公司
+                  <input id="vehicleCompulsoryCompany" placeholder="如：人保、平安、太保" />
+                </label>
+                <label>
+                  保单号
+                  <input id="vehicleCompulsoryPolicyNo" placeholder="如：PDAA2025..." />
+                </label>
+                <label>
+                  强制险到期日
+                  <input id="vehicleCompulsoryExpiry" type="date" />
+                </label>
+                <label class="wide">
+                  保单 PDF（可选上传，留空则保留原文件）
+                  <input id="vehicleCompulsoryPdf" type="file" accept="application/pdf" />
+                  <span class="cell-muted" id="vehicleCompulsoryPdfStatus">未选择</span>
+                </label>
+              </fieldset>
+              <fieldset class="wide form-section compact-insurance">
+                <legend>商业险</legend>
+                <label>
+                  保险公司
+                  <input id="vehicleCommercialCompany" placeholder="如：人保、平安、太保" />
+                </label>
+                <label>
+                  保单号
+                  <input id="vehicleCommercialPolicyNo" placeholder="如：PDAA2025..." />
+                </label>
+                <label>
+                  商业险到期日
+                  <input id="vehicleCommercialExpiry" type="date" />
+                </label>
+                <label class="wide">
+                  保单 PDF（可选上传，留空则保留原文件）
+                  <input id="vehicleCommercialPdf" type="file" accept="application/pdf" />
+                  <span class="cell-muted" id="vehicleCommercialPdfStatus">未选择</span>
+                </label>
+              </fieldset>
+              <fieldset class="wide form-section compact-insurance">
+                <legend>超赔险</legend>
+                <label>
+                  保险公司
+                  <input id="vehicleExcessCompany" placeholder="如：人保、平安、太保" />
+                </label>
+                <label>
+                  保单号
+                  <input id="vehicleExcessPolicyNo" placeholder="如：PDAA2025..." />
+                </label>
+                <label>
+                  超赔险到期日
+                  <input id="vehicleExcessExpiry" type="date" />
+                </label>
+                <label class="wide">
+                  保单 PDF（可选上传，留空则保留原文件）
+                  <input id="vehicleExcessPdf" type="file" accept="application/pdf" />
+                  <span class="cell-muted" id="vehicleExcessPdfStatus">未选择</span>
+                </label>
+              </fieldset>
+            </div>
+            <div class="form-actions wide">
+              <button class="button primary" type="submit">保存车辆</button>
+              <button class="button ghost" data-reset="vehicleForm" type="button">清空</button>
+              <button class="button ghost" data-module-mode="vehicles" data-mode="list" type="button">返回车辆列表</button>
+            </div>
+          </form>
+          </div>
+          <div class="module-panel" data-module="vehicles" data-mode="list" data-module-panel="vehicles-list">
+          <div class="table-panel panel">
+            <div class="panel-head">
+              <h3>车辆列表</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>车牌</th>
+                    <th>类型</th>
+                    <th>司机</th>
+                    <th>本月产值</th>
+                    <th>本月费用</th>
+                    <th>状态</th>
+                    <th>年审到期</th>
+                    <th>强制险到期</th>
+                    <th>商业险到期</th>
+                    <th>超赔险到期</th>
+                    <th>年审照片</th>
+                    <th>保险附件</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="vehiclesTableBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination" id="vehiclesPagination"></div>
+          </div>
+          <div class="module-actions">
+            <button class="button primary" data-role-requires="master-data" data-module-mode="vehicles" data-mode="entry" type="button">录入新车辆</button>
+          </div>
+          </div>
+        </section>
+
+        <section class="page" id="customers">
+          <div class="module-panel" data-role-requires="master-data" data-module="customers" data-mode="customer-entry" data-module-panel="customer-entry" hidden>
+            <form class="form-grid panel" id="customerForm">
+              <input type="hidden" id="customerId" />
+              <label>
+                客户名称
+                <input id="customerName" placeholder="如：宏达商砼" required />
+              </label>
+              <label>
+                联系人
+                <input id="customerContact" placeholder="如：王经理" />
+              </label>
+              <label>
+                电话
+                <input id="customerPhone" placeholder="手机号/座机" />
+              </label>
+              <label>
+                欠款预警额度
+                <input id="customerCreditLimit" type="number" min="0" step="0.01" value="0" />
+              </label>
+              <label class="wide">
+                备注
+                <input id="customerNote" placeholder="结算周期、开票要求等" />
+              </label>
+              <label class="wide">
+                合同提供
+                <input id="customerContractPdf" type="file" accept="application/pdf" />
+                <span class="cell-muted" id="customerContractPdfStatus">未选择</span>
+              </label>
+              <div class="subsection-title">单价管理</div>
+              <div class="subsection-title">混凝土运输单价</div>
+              <label>
+                第一公里节点
+                <input id="customerDistanceNode1" type="number" min="0" step="0.1" value="10" />
+              </label>
+              <label>
+                第二公里节点
+                <input id="customerDistanceNode2" type="number" min="0" step="0.1" value="25" />
+              </label>
+              <label>
+                第一段运输单价
+                <input id="customerDistancePrice1" type="number" min="0" step="0.01" value="22" />
+              </label>
+              <label>
+                第二段运输单价
+                <input id="customerDistancePrice2" type="number" min="0" step="0.01" value="25" />
+              </label>
+              <label>
+                超节点每公里加价
+                <input id="customerDistanceExtraPrice" type="number" min="0" step="0.01" value="1" />
+              </label>
+              <label>
+                默认带料单价
+                <input id="customerDefaultMaterialUnitPrice" type="number" min="0" step="0.01" value="0" />
+              </label>
+              <label>
+                默认超时单价
+                <input id="customerDefaultOvertimeUnitPrice" type="number" min="0" step="0.01" value="0" />
+              </label>
+              <div class="subsection-title">混凝土泵送单价</div>
+              <label>
+                起方量
+                <input id="customerPumpStartVolume" type="number" min="0" step="0.01" value="50" />
+              </label>
+              <label>
+                出车费
+                <input id="customerPumpStartFee" type="number" min="0" step="0.01" value="800" />
+              </label>
+              <label>
+                默认泵送单价
+                <input id="customerDefaultPumpUnitPrice" type="number" min="0" step="0.01" value="0" />
+              </label>
+              <label>
+                泵送超时单价
+                <input id="customerPumpOvertimeUnitPrice" type="number" min="0" step="0.01" value="0" />
+              </label>
+              <div class="form-actions wide">
+                <button class="button primary" type="submit">保存客户</button>
+                <button class="button ghost" data-reset="customerForm" type="button">清空</button>
+                <button class="button ghost" data-module-mode="customers" data-mode="list" type="button">返回客户列表</button>
+              </div>
+            </form>
+          </div>
+          <div class="module-panel" data-module="customers" data-mode="payment-entry" data-module-panel="payment-entry" hidden>
+            <form class="form-grid panel" id="paymentForm">
+              <input type="hidden" id="paymentId" />
+              <label>
+                收款日期
+                <input id="paymentDate" type="date" required />
+              </label>
+              <label>
+                客户
+                <select id="paymentCustomer" required></select>
+              </label>
+              <label>
+                回款金额
+                <input id="paymentAmount" type="number" min="0" step="0.01" required />
+              </label>
+              <label>
+                方式
+                <select id="paymentMethod">
+                  <option>现金</option>
+                  <option>微信</option>
+                  <option>支付宝</option>
+                  <option>银行转账</option>
+                  <option>承兑/抵账</option>
+                </select>
+              </label>
+              <label>
+                发票号码
+                <input id="paymentInvoiceNo" placeholder="如：FP202607001" />
+              </label>
+              <label class="wide">
+                发票 PDF
+                <input id="paymentInvoicePdf" type="file" accept="application/pdf" />
+                <span class="cell-muted" id="paymentInvoicePdfStatus">未选择</span>
+              </label>
+              <label class="wide">
+                备注
+                <input id="paymentNote" placeholder="如：结清 5 月部分欠款" />
+              </label>
+              <div class="form-actions wide">
+                <button class="button primary" type="submit">提交收款审核</button>
+                <button class="button ghost" data-reset="paymentForm" type="button">清空</button>
+                <button class="button ghost" data-module-mode="customers" data-mode="list" type="button">返回客户列表</button>
+              </div>
+            </form>
+          </div>
+          <div class="module-panel" data-module="customers" data-mode="list" data-module-panel="customers-list">
+          <div class="table-panel panel">
+            <div class="panel-head">
+              <h3>客户列表</h3>
+              <input class="table-search" id="customerSearch" placeholder="搜索客户、联系人、电话" />
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>客户</th>
+                    <th>联系人</th>
+                    <th>累计应收</th>
+                    <th>累计已收</th>
+                    <th>当前欠款</th>
+                    <th>合同</th>
+                    <th>发票</th>
+                    <th>最近业务</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="customersTableBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination" id="customersPagination"></div>
+          </div>
+          <div class="module-actions">
+            <button class="button primary" data-role-requires="master-data" data-module-mode="customers" data-mode="customer-entry" type="button">新增客户</button>
+            <button class="button secondary" data-module-mode="customers" data-mode="payment-entry" type="button">登记收款</button>
+          </div>
+          </div>
+          <div class="module-panel" data-module="customers" data-mode="payments-list" data-module-panel="payments-list" hidden>
+          <div class="table-panel panel">
+            <div class="panel-head">
+              <h3>回款记录</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>日期</th>
+                    <th>客户</th>
+                    <th>金额</th>
+                    <th>方式</th>
+                    <th>发票</th>
+                    <th>备注</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="paymentsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+          </div>
+          <div class="module-panel" data-module="customers" data-mode="customer-ledger" data-module-panel="customer-ledger" hidden>
+          <div class="table-panel panel">
+            <div class="panel-head">
+              <h3 id="customerLedgerTitle">客户运输记录</h3>
+              <button class="button secondary" id="exportCustomerLedgerBtn" type="button">导出Excel</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>类型</th>
+                    <th>日期</th>
+                    <th>车辆/客户</th>
+                    <th>说明</th>
+                    <th>应收</th>
+                    <th>已收</th>
+                    <th>欠款</th>
+                  </tr>
+                </thead>
+                <tbody id="customerLedgerTableBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination" id="customerLedgerPagination"></div>
+          </div>
+          <div class="module-actions">
+            <button class="button ghost" data-module-mode="customers" data-mode="list" type="button">返回客户列表</button>
+          </div>
+          </div>
+        </section>
+
+        <section class="page" id="expenses">
+          <div class="module-panel" data-module="expenses" data-mode="entry" data-module-panel="expenses-entry" hidden>
+          <form class="form-grid panel" id="expenseForm">
+            <input type="hidden" id="expenseId" />
+            <div class="wide form-note" id="expenseRoleHint"></div>
+            <label>
+              日期
+              <input id="expenseDate" type="date" required />
+            </label>
+            <label>
+              车辆
+              <select id="expenseVehicle" required></select>
+            </label>
+            <label>
+              费用类型
+              <select id="expenseType">
+                <option>油费</option>
+                <option>维修费</option>
+                <option>保养费</option>
+                <option>轮胎</option>
+                <option>保险/年检</option>
+                <option>过路费</option>
+                <option>停车费</option>
+                <option>其他</option>
+              </select>
+            </label>
+            <label>
+              金额
+              <input id="expenseAmount" type="number" min="0" step="0.01" required />
+            </label>
+            <label>
+              数量
+              <input id="expenseQuantity" type="number" min="0" step="0.01" value="0" />
+            </label>
+            <label>
+              单位
+              <input id="expenseUnit" value="件" />
+            </label>
+            <label>
+              单价
+              <input id="expenseUnitPrice" type="number" min="0" step="0.01" value="0" />
+            </label>
+            <label>
+              加油升数
+              <input id="expenseLiters" type="number" min="0" step="0.01" value="0" />
+            </label>
+            <label>
+              里程表
+              <input id="expenseOdometer" type="number" min="0" step="1" value="0" />
+            </label>
+            <label>
+              商家/维修厂
+              <input id="expenseVendor" placeholder="如：中石化、某维修厂" />
+            </label>
+            <label class="wide">
+              备注
+              <input id="expenseNote" placeholder="票据编号、维修内容等" />
+            </label>
+            <div class="form-actions wide">
+              <button class="button secondary" id="calcExpenseAmountBtn" type="button">按单价计算</button>
+              <button class="button primary" id="submitExpenseDraftBtn" type="submit">提交草稿费用单</button>
+              <button class="button ghost" data-reset="expenseForm" type="button">清空</button>
+              <button class="button ghost" data-module-mode="expenses" data-mode="list" type="button">返回费用记录</button>
+            </div>
+          </form>
+          </div>
+          <div class="module-panel" data-module="expenses" data-mode="list" data-module-panel="expenses-list">
+          <div class="table-panel panel">
+            <div class="panel-head">
+              <h3>正式费用记录</h3>
+              <input class="table-search" id="expenseSearch" placeholder="搜索车辆、类型、商家" />
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>日期</th>
+                    <th>车辆</th>
+                    <th>类型</th>
+                    <th>金额</th>
+                    <th>升数</th>
+                    <th>商家</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="expensesTableBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination" id="expensesPagination"></div>
+          </div>
+          <div class="module-actions">
+            <button class="button primary" data-module-mode="expenses" data-mode="entry" type="button">支出费用登记</button>
+          </div>
+          </div>
+        </section>
+
+        <section class="page" id="salaries">
+          <div class="module-switcher">
+            <button class="button primary" data-module-mode="salaries" data-mode="list" type="button">人员表</button>
+            <button class="button ghost" data-module-mode="salaries" data-mode="salary-list" type="button">工资记录</button>
+          </div>
+          <div class="module-panel" data-role-requires="master-data" data-module="salaries" data-mode="personnel-entry" data-module-panel="personnel-entry" hidden>
+          <form class="form-grid panel" id="personnelForm">
+            <input type="hidden" id="personnelId" />
+            <label>
+              姓名
+              <input id="personnelName" placeholder="如：张师傅" required />
+            </label>
+            <label>
+              岗位
+              <select id="personnelRole">
+                <option>罐车司机</option>
+                <option>泵车司机</option>
+                <option>泵工</option>
+                <option>调度</option>
+                <option>维修/后勤</option>
+                <option>管理</option>
+              </select>
+            </label>
+            <label>
+              基本薪酬
+              <input id="personnelBase" type="number" min="0" step="0.01" value="0" />
+            </label>
+            <label class="wide">
+              备注
+              <input id="personnelNote" placeholder="如：常跑线路、联系方式、注意事项等" />
+            </label>
+            <div class="form-actions wide">
+              <button class="button primary" type="submit">保存人员</button>
+              <button class="button ghost" data-reset="personnelForm" type="button">清空</button>
+              <button class="button ghost" data-module-mode="salaries" data-mode="list" type="button">返回人员表</button>
+            </div>
+          </form>
+          </div>
+          <div class="module-panel" data-module="salaries" data-mode="list" data-module-panel="salaries-list">
+          <div class="table-panel panel">
+            <div class="panel-head">
+              <h3>人员表</h3>
+              <input class="table-search" id="personnelSearch" placeholder="搜索姓名、岗位" />
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>姓名</th>
+                    <th>岗位</th>
+                    <th>趟数</th>
+                    <th>基本薪酬</th>
+                    <th>备注</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="personnelTableBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination" id="personnelPagination"></div>
+          </div>
+          <div class="module-actions">
+            <button class="button primary" data-role-requires="master-data" data-module-mode="salaries" data-mode="personnel-entry" type="button">新增人员登记</button>
+          </div>
+          </div>
+          <div class="module-panel" data-module="salaries" data-mode="salary-list" data-module-panel="salary-list" hidden>
+          <div class="table-panel panel">
+            <div class="panel-head">
+              <h3>正式工资记录</h3>
+              <input class="table-search" id="salarySearch" placeholder="搜索姓名、岗位" />
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>月份</th>
+                    <th>姓名</th>
+                    <th>岗位</th>
+                    <th>应发</th>
+                    <th>已发</th>
+                    <th>未发</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="salariesTableBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination" id="salariesPagination"></div>
+          </div>
+          <div class="module-actions">
+            <button class="button secondary" data-module-mode="salaries" data-mode="salary-entry" type="button">工资登记</button>
+          </div>
+          </div>
+          <div class="module-panel" data-module="salaries" data-mode="salary-entry" data-module-panel="salary-entry" hidden>
+          <form class="form-grid panel" id="salaryForm">
+            <input type="hidden" id="salaryId" />
+            <div class="form-note wide" id="salaryRoleHint"></div>
+            <label>
+              月份
+              <input id="salaryMonth" type="month" required />
+            </label>
+            <label>
+              人员
+              <select id="salaryPerson" required></select>
+            </label>
+            <label>
+              基本薪酬
+              <input id="salaryBase" type="number" min="0" step="0.01" value="0" />
+            </label>
+            <label>
+              提成/奖金
+              <input id="salaryBonus" type="number" min="0" step="0.01" value="0" />
+            </label>
+            <label>
+              扣款
+              <input id="salaryDeduction" type="number" min="0" step="0.01" value="0" />
+            </label>
+            <label>
+              已发金额
+              <input id="salaryPaid" type="number" min="0" step="0.01" value="0" />
+            </label>
+            <label class="wide">
+              备注
+              <input id="salaryNote" placeholder="如：含餐补、全勤、预支等" />
+            </label>
+            <div class="form-actions wide">
+              <button class="button primary" id="submitSalaryDraftBtn" type="submit">提交工资审核</button>
+              <button class="button ghost" data-reset="salaryForm" type="button">清空</button>
+              <button class="button ghost" data-module-mode="salaries" data-mode="salary-list" type="button">返回工资记录</button>
+            </div>
+          </form>
+          </div>
+        </section>
+
+        <section class="page" id="reviews">
+          <div class="review-switcher">
+            <button class="button primary" data-review-mode="jobs" type="button">每日运输审核</button>
+            <button class="button ghost" data-review-mode="expenses" type="button">支出费用审核</button>
+            <button class="button ghost" data-review-mode="salaries" type="button">人员工资审核</button>
+            <button class="button ghost" data-review-mode="payments" type="button">收款登记审核</button>
+          </div>
+          <div class="table-panel panel" data-review-panel="jobs">
+            <div class="panel-head">
+              <h3>每日运输审核</h3>
+              <span class="review-alert" data-review-alert="jobs" hidden>!</span>
+              <div class="review-toolbar">
+                <input class="table-search" id="jobDraftSearch" placeholder="搜索单据、车牌、客户、施工单位" />
+                <button class="button secondary small" data-action="approve-all-jobs" type="button">全部通过</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>单据编号</th>
+                    <th>日期</th>
+                    <th>车辆</th>
+                    <th>客户</th>
+                    <th>施工/工程</th>
+                    <th>数量</th>
+                    <th>应收</th>
+                    <th>已收</th>
+                    <th>提交人</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="jobDraftsTableBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination" id="jobDraftsPagination"></div>
+          </div>
+          <div class="table-panel panel" data-review-panel="expenses" hidden>
+            <div class="panel-head">
+              <h3>支出费用审核</h3>
+              <span class="review-alert" data-review-alert="expenses" hidden>!</span>
+              <div class="review-toolbar">
+                <input class="table-search" id="expenseDraftSearch" placeholder="搜索车辆、类型、商家" />
+                <button class="button secondary small" data-action="approve-all-expenses" type="button">全部通过</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>日期</th>
+                    <th>车辆</th>
+                    <th>类型</th>
+                    <th>数量</th>
+                    <th>金额</th>
+                    <th>提交人</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="expenseDraftsTableBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination" id="expenseDraftsPagination"></div>
+          </div>
+          <div class="table-panel panel" data-review-panel="salaries" hidden>
+            <div class="panel-head">
+              <h3>人员工资审核</h3>
+              <span class="review-alert" data-review-alert="salaries" hidden>!</span>
+              <div class="review-toolbar">
+                <input class="table-search" id="salaryDraftSearch" placeholder="搜索姓名、岗位" />
+                <button class="button secondary small" data-action="approve-all-salaries" type="button">全部通过</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>月份</th>
+                    <th>姓名</th>
+                    <th>岗位</th>
+                    <th>应发</th>
+                    <th>已发</th>
+                    <th>提交人</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="salaryDraftsTableBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination" id="salaryDraftsPagination"></div>
+          </div>
+          <div class="table-panel panel" data-review-panel="payments" hidden>
+            <div class="panel-head">
+              <h3>收款登记审核</h3>
+              <span class="review-alert" data-review-alert="payments" hidden>!</span>
+              <div class="review-toolbar">
+                <input class="table-search" id="paymentDraftSearch" placeholder="搜索客户、方式、发票" />
+                <button class="button secondary small" data-action="approve-all-payments" type="button">全部通过</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>日期</th>
+                    <th>客户</th>
+                    <th>金额</th>
+                    <th>方式</th>
+                    <th>发票</th>
+                    <th>提交人</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="paymentDraftsTableBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination" id="paymentDraftsPagination"></div>
+          </div>
+        </section>
+
+        <section class="page" id="notifications">
+          <div class="table-panel panel">
+            <div class="panel-head">
+              <h3 id="notificationCenterTitle">通知</h3>
+              <input class="table-search" id="notificationSearch" placeholder="搜索驳回原因、业务内容" />
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>类型</th>
+                    <th>内容</th>
+                    <th>状态</th>
+                    <th>更新时间</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="notificationsTableBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination" id="notificationsPagination"></div>
+          </div>
+        </section>
+
+        <section class="page" id="submittedDrafts">
+          <div class="table-panel panel">
+            <div class="panel-head">
+              <h3 id="submittedDraftsTitle">提交草稿</h3>
+              <input class="table-search" id="submittedDraftsSearch" placeholder="搜索草稿内容、业务内容" />
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>类型</th>
+                    <th>内容</th>
+                    <th>状态</th>
+                    <th>提交时间</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="submittedDraftsTableBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination" id="submittedDraftsPagination"></div>
+          </div>
+        </section>
+
+        <section class="page" id="data">
+          <div class="section-head">
+            <div>
+              <h2>数据备份与月报</h2>
+              <p>当前数据保存在本机浏览器。建议定期导出 JSON 备份，换电脑前也要先导出。</p>
+            </div>
+          </div>
+          <div class="dashboard-grid">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="section-kicker">数据安全</p>
+                  <h3>备份</h3>
+                </div>
+              </div>
+              <div class="stack-actions">
+                <button class="button primary" data-role-requires="data-admin" id="exportJsonBtn" type="button">导出全部数据</button>
+                <label class="button secondary file-button" data-role-requires="data-admin">
+                  导入备份
+                  <input id="importJsonInput" type="file" accept="application/json" />
+                </label>
+                <button class="button ghost" id="exportCsvBtn" type="button">导出本月 CSV</button>
+                <button class="button danger" data-role-requires="data-admin" id="resetDemoBtn" type="button">恢复演示数据</button>
+              </div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="section-kicker">经营复盘</p>
+                  <h3>本月摘要</h3>
+                </div>
+              </div>
+              <textarea id="monthlySummary" rows="13" readonly></textarea>
+              <div class="form-actions">
+                <button class="button secondary" id="copySummaryBtn" type="button">复制摘要</button>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js?v=20260709-docno-cache" defer></script>
+  </body>
+</html>

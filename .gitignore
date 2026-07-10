@@ -1,0 +1,6 @@
+node_modules/
+.codegraph/
+data/*
+!data/.gitkeep
+*.log
+.DS_Store

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>登录 · 车辆运输财务管理系统</title>
+    <link rel="stylesheet" href="styles.css?v=20260708-auth-brand" />
+  </head>
+  <body class="plain-page">
+    <main class="auth-page">
+      <section class="auth-card">
+      <div class="brand-hero auth-brand" aria-label="车辆运输财务管理系统">
+        <span class="brand-hero-logo" aria-hidden="true">砼</span>
+        <div class="brand-hero-copy">
+          <div class="brand-hero-text" aria-hidden="true">
+            <span>车辆运输财务管理</span><em>系统</em>
+          </div>
+          <p>商业化私有部署 · 安全登录</p>
+        </div>
+      </div>
+      <form id="loginForm">
+        <label for="phone">账号 / 手机号</label>
+        <input id="phone" name="phone" autocomplete="username" required placeholder="请输入账号" />
+        <label for="password">密码</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="请输入密码" />
+        <button class="button primary" id="submitBtn" type="submit">登录</button>
+        <div class="message" id="msg"></div>
+      </form>
+      </section>
+    </main>
+    <script>
+      const form = document.querySelector('#loginForm');
+      const msg = document.querySelector('#msg');
+      const btn = document.querySelector('#submitBtn');
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        msg.textContent = '';
+        btn.disabled = true;
+        try {
+          const payload = Object.fromEntries(new FormData(form).entries());
+          const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.ok) throw new Error(data.error || '登录失败');
+          location.href = '/';
+        } catch (error) {
+          msg.textContent = error.message || String(error);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>

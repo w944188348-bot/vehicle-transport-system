@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "vehicle-transport": {
+      "command": "node",
+      "args": [
+        "C:\\Users\\Administrator\\Desktop\\车辆运输系统\\mcp\\fleet_mcp_server.mjs"
+      ],
+      "env": {
+        "FLEET_DATA_PATH": "C:\\Users\\Administrator\\Desktop\\车辆运输系统\\data\\fleet-data.json"
+      }
+    }
+  }
+}

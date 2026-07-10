@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>用户管理 · 车辆运输财务管理系统</title>
+    <link rel="stylesheet" href="styles.css?v=20260708-auth-brand" />
+  </head>
+  <body class="plain-page">
+    <div class="admin-shell">
+      <header class="admin-header">
+        <div class="admin-title">
+          <div class="brand-hero admin-brand" aria-label="车辆运输财务管理系统">
+            <span class="brand-hero-logo" aria-hidden="true">砼</span>
+            <div class="brand-hero-copy">
+              <div class="brand-hero-text" aria-hidden="true">
+                <span>车辆运输财务管理</span><em>系统</em>
+              </div>
+              <p>用户管理 · 账号、角色、启用与禁用</p>
+            </div>
+          </div>
+        </div>
+        <a class="button ghost" href="/">返回系统</a>
+      </header>
+      <section class="panel table-panel">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">账号与权限</p>
+            <h2 id="formTitle">新增用户</h2>
+          </div>
+        </div>
+        <form id="userForm" class="admin-grid panel-body">
+          <input name="id" type="hidden" />
+          <label>
+            账号/手机号
+            <input name="phone" autocomplete="username" required />
+          </label>
+          <label>
+            姓名
+            <input name="name" autocomplete="name" required />
+          </label>
+          <label>
+            角色
+            <select name="role">
+              <option value="admin">admin 管理员</option>
+              <option value="dispatcher">dispatcher 调度</option>
+              <option value="driver">driver 司机</option>
+              <option value="accountant">accountant 会计</option>
+              <option value="viewer">viewer 只读</option>
+            </select>
+          </label>
+          <label>
+            状态
+            <select name="status">
+              <option value="active">active 启用</option>
+              <option value="disabled">disabled 禁用</option>
+            </select>
+          </label>
+          <label>
+            密码
+            <input name="password" placeholder="更新时可留空" type="password" autocomplete="new-password" />
+          </label>
+          <div class="actions">
+            <button class="button primary" type="submit">保存</button>
+            <button class="button ghost" id="resetFormBtn" type="button">清空</button>
+          </div>
+        </form>
+        <div id="msg" class="message panel-body"></div>
+      </section>
+      <section class="panel table-panel">
+        <div class="panel-head">
+          <h2>现有用户</h2>
+        </div>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>账号</th><th>姓名</th><th>角色</th><th>状态</th><th>最后登录</th><th>操作</th></tr></thead>
+            <tbody id="userRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+    <script>
+      const rows = document.querySelector('#userRows');
+      const msg = document.querySelector('#msg');
+      const form = document.querySelector('#userForm');
+      const formTitle = document.querySelector('#formTitle');
+      let users = [];
+
+      async function api(path, options = {}) {
+        const res = await fetch(path, { ...options, headers: { 'content-type': 'application/json', ...(options.headers || {}) } });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data.ok === false) throw new Error(data.error || `请求失败 ${res.status}`);
+        return data;
+      }
+
+      function showMessage(text, ok = false) {
+        msg.textContent = text || '';
+        msg.classList.toggle('ok', ok);
+      }
+
+      async function loadUsers() {
+        try {
+          const data = await api('/api/users');
+          users = data.users || [];
+          rows.innerHTML = users.map((u) => `<tr>
+            <td>${escapeHtml(u.phone)}</td>
+            <td>${escapeHtml(u.name)}</td>
+            <td><span class="badge">${escapeHtml(roleLabel(u.role))}</span></td>
+            <td><span class="status-pill ${u.status === 'disabled' ? 'danger' : ''}">${escapeHtml(statusLabel(u.status))}</span></td>
+            <td>${escapeHtml(formatDate(u.lastLoginAt))}</td>
+            <td><div class="actions">
+              <button class="mini-button" data-action="edit" data-id="${escapeAttr(u.id)}" type="button">编辑</button>
+              <button class="mini-button" data-action="reset-password" data-id="${escapeAttr(u.id)}" type="button">重置密码</button>
+              ${u.status === 'disabled'
+                ? `<button class="mini-button" data-action="enable" data-id="${escapeAttr(u.id)}" type="button">启用</button>`
+                : `<button class="mini-button danger" data-action="disable" data-id="${escapeAttr(u.id)}" type="button">禁用</button>`}
+              <button class="mini-button danger" data-action="delete" data-id="${escapeAttr(u.id)}" type="button">删除</button>
+            </div></td>
+          </tr>`).join('');
+        } catch (e) {
+          showMessage(e.message);
+          if (String(e.message).includes('401')) location.href = '/login.html';
+        }
+      }
+
+      function editUser(id) {
+        const user = users.find((item) => item.id === id);
+        if (!user) return;
+        form.elements.id.value = user.id;
+        form.elements.phone.value = user.phone || '';
+        form.elements.name.value = user.name || '';
+        form.elements.role.value = user.role || 'viewer';
+        form.elements.status.value = user.status || 'active';
+        form.elements.password.value = '';
+        formTitle.textContent = '编辑用户';
+        form.phone.focus();
+        showMessage('');
+      }
+
+      async function saveUser(payload, successText) {
+        await api('/api/users', { method:'POST', body: JSON.stringify(payload) });
+        await loadUsers();
+        showMessage(successText, true);
+      }
+
+      async function resetPassword(id) {
+        const user = users.find((item) => item.id === id);
+        if (!user) return;
+        const password = prompt(`请输入 ${user.phone} 的新密码`);
+        if (!password) return;
+        await saveUser({ ...user, password }, '密码已重置');
+      }
+
+      async function disableUser(id) {
+        if (!confirm('确认禁用这个用户？')) return;
+        await api('/api/users/' + encodeURIComponent(id) + '/disable', { method: 'POST' });
+        await loadUsers();
+        showMessage('用户已禁用', true);
+      }
+
+      async function deleteUser(id) {
+        if (!confirm('确认删除这个用户？删除后该账号不能再登录。')) return;
+        await api('/api/users/' + encodeURIComponent(id), { method: 'DELETE' });
+        await loadUsers();
+        showMessage('用户已删除', true);
+      }
+
+      async function enableUser(id) {
+        await api('/api/users/' + encodeURIComponent(id) + '/enable', { method: 'POST' });
+        await loadUsers();
+        showMessage('用户已启用', true);
+      }
+
+      function resetForm() {
+        form.reset();
+        form.elements.id.value = '';
+        form.elements.status.value = 'active';
+        formTitle.textContent = '新增用户';
+        showMessage('');
+      }
+
+      function escapeHtml(s) {
+        return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+      }
+
+      function escapeAttr(s) {
+        return escapeHtml(s).replace(/`/g, '&#096;');
+      }
+
+      function roleLabel(role) {
+        return { admin:'管理员', dispatcher:'调度', driver:'司机', accountant:'会计', viewer:'只读' }[role] || role || '';
+      }
+
+      function statusLabel(status) {
+        return status === 'disabled' ? '已禁用' : '已启用';
+      }
+
+      function formatDate(value) {
+        if (!value) return '';
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? value : date.toLocaleString('zh-CN', { hour12: false });
+      }
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        showMessage('');
+        const payload = Object.fromEntries(new FormData(form).entries());
+        if (!payload.id) delete payload.id;
+        if (!payload.password) delete payload.password;
+        try {
+          await saveUser(payload, payload.id ? '用户已更新' : '用户已创建');
+          resetForm();
+        } catch (err) {
+          showMessage(err.message);
+        }
+      });
+
+      rows.addEventListener('click', async (event) => {
+        const button = event.target.closest('button[data-action]');
+        if (!button) return;
+        const { action, id } = button.dataset;
+        try {
+          if (action === 'edit') editUser(id);
+          if (action === 'reset-password') await resetPassword(id);
+          if (action === 'disable') await disableUser(id);
+          if (action === 'delete') await deleteUser(id);
+          if (action === 'enable') await enableUser(id);
+        } catch (err) {
+          showMessage(err.message);
+        }
+      });
+
+      document.querySelector('#resetFormBtn').addEventListener('click', resetForm);
+      loadUsers();
+    </script>
+  </body>
+</html>
